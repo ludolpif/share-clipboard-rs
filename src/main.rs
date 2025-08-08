@@ -1,4 +1,7 @@
 use arboard::Clipboard;
+#[cfg(target_os = "linux")]
+use arboard::SetExtLinux;
+
 use bytes::{BufMut, Bytes, BytesMut};
 use clap::Parser;
 use std::{
@@ -170,8 +173,14 @@ async fn write_to_clipboard(data: Bytes) -> Result<(), AppError> {
         let text_content = String::from_utf8(data.to_vec())?;
 
         let mut clipboard = Clipboard::new()?;
-        clipboard.set_text(text_content)?;
-        println!("Wrote {} bytes to clipboard.", data.len());
+        if cfg!(target_os = "linux") {
+            println!("Will write {} bytes to clipboard and wait a consummer (paste event).", data.len());
+            clipboard.set().wait().text(text_content)?;
+        } else {
+            println!("Will write {} bytes to clipboard.", data.len());
+            clipboard.set_text(text_content)?;
+            println!("Wrote {} bytes to clipboard.", data.len());
+        }
         Ok(())
     })
     .await
