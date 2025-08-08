@@ -161,6 +161,7 @@ impl Server {
 // IMPORTANT: Clipboard operations can be blocking!
 // Using spawn_blocking ensures we don't block the async runtime thread.
 async fn write_to_clipboard(data: Bytes) -> Result<(), AppError> {
+    #[cfg(debug_assertions)]
     println!(
         "attempt to write string to clipboard: {}",
         String::from_utf8(data.to_vec())?
