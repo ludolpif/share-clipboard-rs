@@ -17,6 +17,7 @@ use tokio::{
 
 const CLIPBOARD_MESSAGE_TYPE: &[u8; 4] = &[0, 0, 0, 1];
 const PREFIX_LENGTH: usize = 8;
+const BODY_MAX_LENGTH: i32 = 0x800000; // 8 Mio
 
 #[derive(Debug, Error)]
 enum AppError {
@@ -232,6 +233,10 @@ async fn handle_connection(
             Ok(_) => {
                 let msg_len = i32::from_be_bytes(header_buf[..4].try_into().unwrap());
                 println!("got copied data length: {}", msg_len);
+                if msg_len <= PREFIX_LENGTH as i32 || ( msg_len > (PREFIX_LENGTH as i32 + BODY_MAX_LENGTH) ) {
+                    eprintln!("Error msg_len indicates a negative body length or too large");
+                    break;
+                }
 
                 let mut body_buf = vec![0; msg_len as usize - PREFIX_LENGTH];
                 match reader.read(&mut body_buf).await {
